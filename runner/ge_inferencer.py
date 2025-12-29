@@ -211,8 +211,8 @@ class Inferencer:
             action_space = self.args.data["train"]["action_space"]
             
 
-        if self.args.return_video:
-            n_chunk_action = 1
+        if self.args.return_video:  # 这里设置推理次数
+            n_chunk_action = 5
 
 
         for i_validation in range(n_validation):
@@ -220,7 +220,7 @@ class Inferencer:
             self.val_dataloader.dataset.fix_epiidx = i_validation
 
             if self.args.return_action:
-                self.val_dataloader.dataset.fix_sidx = 100
+                self.val_dataloader.dataset.fix_sidx = 1   ###  这里手动规定了开始推理的时间步
                 self.val_dataloader.dataset.fix_mem_idx = [1 for _ in range(self.args.data['train']['n_previous'])]
 
                 pd_actions_arr_all = None
@@ -234,7 +234,13 @@ class Inferencer:
 
             for i_chunk_action in range(n_chunk_action):
 
+                # try:
+                #     batch = next(iter(self.val_dataloader))
+                # except StopIteration:
+                #     print(f"Episode {i_validation} finished for action inference.")
+                #     break
                 batch = next(iter(self.val_dataloader))
+
                 image = batch['video'][:,:,:,:self.args.data['train']['n_previous']]  # shape b,c,v,t,h,w 
                 prompt = batch['caption']
                 gt_video = batch['video']
@@ -277,7 +283,7 @@ class Inferencer:
                     action_dim=self.args.diffusion_model["config"]["action_in_channels"],
                 )[0]
 
-                save_cap = f'Validation_{i_validation}'
+                save_cap = f'Validation_{i_chunk_action}'
 
                 if self.args.return_video:
                     
@@ -353,8 +359,13 @@ class Inferencer:
 
                 ### prepare for next chunk action prediction
                 self.val_dataloader.dataset.fix_sidx += self.args.data['train']['action_chunk']
-                self.val_dataloader.dataset.fix_mem_idx = x = (np.linspace(0, self.val_dataloader.dataset.fix_sidx-1, self.args.data['train']['n_previous']).round().astype(np.int16)).tolist()
-
+                
+                if self.args.data['train']['n_previous'] == 1:
+                    # 如果只有一帧历史，强制使用紧挨着预测窗口的前一帧
+                    self.val_dataloader.dataset.fix_mem_idx = [self.val_dataloader.dataset.fix_sidx - 1]
+                else:
+                    # 否则保持原有的均匀采样逻辑
+                    self.val_dataloader.dataset.fix_mem_idx = (np.linspace(0, self.val_dataloader.dataset.fix_sidx-1, self.args.data['train']['n_previous']).round().astype(np.int16)).tolist()
 
 
             if self.args.return_action:

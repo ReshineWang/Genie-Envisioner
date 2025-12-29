@@ -5,8 +5,8 @@ tracker_name: cosmos2_trainer
 
 logging_dir: logs
 
-pretrained_model_name_or_path: PATH_TO_PRETRAINED_WEIGHTS_OF_VAE_AND_TOKENIZER
-tokenizer_pretrained_model_name_or_path: PATH_TO_PRETRAINED_WEIGHTS_OF_VAE_AND_TOKENIZER
+pretrained_model_name_or_path: "/data/dex/Genie-Envisioner/ckpt/cosmos"
+tokenizer_pretrained_model_name_or_path: "/data/dex/Genie-Envisioner/ckpt/cosmos"
 
 
 ### 
@@ -56,7 +56,7 @@ pixel_wise_timestep: False
 
 
 diffusion_model:
-  model_path: LOCAL_PATH/TO/ge_sim_cosmos_v0.1.safetensors
+  model_path: "/data/dex/Genie-Envisioner/ckpt/ge_sim_cosmos_v0.1.safetensors"
 
   config:
     in_channels: 26  # 16 (vae) + 3 (traj) + 6 (raymap) + 1 (padding mask)

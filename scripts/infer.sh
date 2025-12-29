@@ -13,14 +13,15 @@ echo "Inference on 1 Nodes, 1 GPUs"
 torchrun --nnodes=1 \
     --nproc_per_node=1 \
     --node_rank=0 \
+    --master_port=29501 \
     $script_path \
-    --runner_class_path runner/ge_inferencer.py \
+    --runner_class_path runner/ge_inferencer_ar.py \
     --runner_class Inferencer \
     --config_file $config_path \
     --mode infer \
     --checkpoint_path $ckp_path \
     --output_path $output_path \
     --n_validation 1 \
-    --n_chunk_action 10 \
+    --n_chunk_action 5 \
     --domain_name $domain_name
 

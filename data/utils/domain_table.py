@@ -1,3 +1,5 @@
 DomainTable = {
-    'agibotworld': 11
+    'agibotworld': 11,
+    'RoboTwin': 12,
+    'Rearr': 13,
 }

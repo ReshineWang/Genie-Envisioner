@@ -135,6 +135,7 @@ def main(args: Args) -> None:
 
     for _ in tqdm.trange(args.num_steps, desc="Running policy"):
         inference_start = time.time()
+        print(obs_fn())
         action = policy.infer(obs_fn())
         
         timing_recorder.record("client_infer_ms", 1000 * (time.time() - inference_start))

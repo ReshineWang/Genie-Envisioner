@@ -1,11 +1,11 @@
 model_name: 'ltx_train'
 is_i2v: True
-report_to: None
+report_to: wandb
 tracker_name: ltx_trainer
 
 logging_dir: logs
-output_dir: PATH_TO_SAVE_LOGS_AND_CHECKPOINTS
-pretrained_model_name_or_path: PATH_TO_PRETRAINED_WEIGHTS_OF_VAE_AND_TOKENIZER
+output_dir: GE_BASE_ROBOTWIN_FINETUNE
+pretrained_model_name_or_path: "/data/dex/Genie-Envisioner/ckpt/LTX_video"
 
 ###
 train_data_class_path: data/lerobot_like_dataset.py
@@ -35,11 +35,11 @@ train_mode: 'video_only'
 action_loss_scale: 1.0
 
 # total training step is decided by the minimum of the below two
-train_steps: 1000000
-train_epochs: 10000
-steps_to_save: 2000
+train_steps: 10000
+train_epochs: 8000
+steps_to_save: 1000
 steps_to_log: 20
-steps_to_val: 2000
+steps_to_val: 1000
 
 mixed_precision: bf16
 allow_tf32: False
@@ -66,7 +66,7 @@ noise_to_first_frame: 0.1
 
 # Optimizer Config
 optimizer: adamw
-lr: 3e-5
+lr: 1e-4
 beta1: 0.9
 beta2: 0.95
 beta3: 0.999
@@ -81,7 +81,7 @@ gradient_accumulation_steps: 1
 
 # lr_scheduler Config
 lr_scheduler: constant_with_warmup
-lr_warmup_steps: 1000
+lr_warmup_steps: 100
 lr_num_cycles: 1
 lr_power: 1.0
 
@@ -95,7 +95,7 @@ flow_mode_scale: 1.29
 pixel_wise_timestep: True
 
 diffusion_model:
-  model_path: PATH_TO_ANY_CHECKPOINT_SAFETENSOR
+  model_path: "/data/dex/Genie-Envisioner/ckpt/GE_base_fast_v0.1.safetensors"
   config:
     activation_fn: gelu-approximate
     attention_bias: true
@@ -120,35 +120,37 @@ diffusion_model:
 data:
 ### more details can be found in data/utils/*_dataset.py
   train:
-    data_roots: ["path/to/aidea-world-lerobot"]
-    domains: ["agibotworld", ]
+    data_roots: ["/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot"]
+    domains: ["RoboTwin", ]
     sample_size: [192, 256]
-    sample_n_frames: 900
+    sample_n_frames: 500
     preprocess :  'resize'
-    valid_cam :  ['observation.images.top_head', 'observation.images.hand_left', 'observation.images.hand_right']
-    chunk: 9
-    action_chunk: 54
-    n_previous: 4
+    valid_cam :  ['observation.images.cam_high','observation.images.cam_left_wrist', 'observation.images.cam_right_wrist']
+    chunk: 50
+    action_chunk: 50
+    n_previous: 1
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "path/to/save/dataset_meta_info_cache/train"
+    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/RoboTwin/dataset_meta_info_cache/train"
     action_type: "delta"
     action_space: "joint"
+    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/RoboTwin/sta/sta.json"
   val:
-    data_roots: ["path/to/aidea-world-lerobot"]
-    domains: ["agibotworld", ]
+    data_roots: ["/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot"]
+    domains: ["RoboTwin", ]
     sample_size: [192, 256]
-    sample_n_frames: 900
+    sample_n_frames: 500
     preprocess :  'resize'
-    valid_cam :  ['observation.images.top_head', 'observation.images.hand_left', 'observation.images.hand_right']
-    chunk: 9
-    action_chunk: 54
-    n_previous: 4
+    valid_cam :  ['observation.images.cam_high','observation.images.cam_left_wrist', 'observation.images.cam_right_wrist']
+    chunk: 50
+    action_chunk: 50
+    n_previous: 1
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "path/to/save/dataset_meta_info_cache/val"
+    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/RoboTwin/dataset_meta_info_cache/val"
     action_type: "delta"
     action_space: "joint"
+    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/RoboTwin/sta/sta.json"
 
 
 use_color_jitter: true

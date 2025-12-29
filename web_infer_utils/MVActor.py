@@ -3,6 +3,7 @@ import os
 import pdb
 import sys
 import time
+import json
 
 import cv2
 from yaml import Dumper, Loader, dump, load
@@ -95,7 +96,7 @@ class MVActor:
             action_statistic_name = domain_name + "_" + self.action_space
 
         self.StatisticInfo = StatisticInfo
-        if get(self.args.data['val'], 'stat_file', None) is not None:
+        if self.args.data['val'].get('stat_file', None) is not None:
             with open(self.args.data['val']['stat_file'], "r") as f:
                 self.StatisticInfo = json.load(f)
 

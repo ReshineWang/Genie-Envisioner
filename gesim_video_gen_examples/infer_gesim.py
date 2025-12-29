@@ -172,6 +172,44 @@ def load_cam_infos(extrinsic_root, intrinsic_root, valid_cams, orisize=None, siz
     return extrinsics, intrinsics
 
 
+def _tensor_stats(x):
+    """Return basic stats and NaN/Inf counts for torch.Tensor or numpy.ndarray."""
+    stats = {}
+    try:
+        if isinstance(x, torch.Tensor):
+            xa = x.detach().cpu()
+            stats['shape'] = tuple(xa.shape)
+            stats['dtype'] = str(xa.dtype)
+            stats['n_nan'] = int(torch.isnan(xa).sum().item())
+            stats['n_inf'] = int((~torch.isfinite(xa)).sum().item())
+            # use nan-aware ops
+            try:
+                stats['min'] = float(torch.nanmin(xa))
+                stats['max'] = float(torch.nanmax(xa))
+                stats['mean'] = float(torch.nanmean(xa))
+                stats['std'] = float(torch.nanstd(xa))
+            except Exception:
+                stats.update({'min': None, 'max': None, 'mean': None, 'std': None})
+        elif isinstance(x, np.ndarray):
+            stats['shape'] = x.shape
+            stats['dtype'] = str(x.dtype)
+            stats['n_nan'] = int(np.isnan(x).sum())
+            stats['n_inf'] = int(np.isinf(x).sum())
+            try:
+                stats['min'] = float(np.nanmin(x))
+                stats['max'] = float(np.nanmax(x))
+                stats['mean'] = float(np.nanmean(x))
+                stats['std'] = float(np.nanstd(x))
+            except Exception:
+                stats.update({'min': None, 'max': None, 'mean': None, 'std': None})
+        else:
+            stats['type'] = type(x)
+    except Exception as e:
+        stats['error'] = str(e)
+    return stats
+
+
+
 
 def infer(
     config_file, image_root, extrinsic_root, intrinsic_root, action_path, prompt, save_path,
@@ -252,6 +290,33 @@ def infer(
 
 
     for ichunk in range(nchunk):
+
+        # --- Debug checks before calling the pipeline ---
+        debug_items = dict(
+            obs=obs,
+            ichunk_cond_to_concat=ichunk_cond_to_concat,
+            cond_to_concat=cond_to_concat,
+            trajs=trajs,
+            rays=rays,
+            extrinsics=extrinsics,
+            intrinsics=intrinsics,
+            actions=actions,
+        )
+        for name, val in debug_items.items():
+            stats = _tensor_stats(val)
+            print(f"DEBUG stats - {name}: {stats}")
+            if stats.get('n_nan', 0) > 0 or stats.get('n_inf', 0) > 0:
+                # ensure save_path exists
+                try:
+                    os.makedirs(save_path, exist_ok=True)
+                except Exception:
+                    pass
+                dump_path = os.path.join(save_path, f"debug_{name}")
+                if isinstance(val, torch.Tensor):
+                    torch.save(val.detach().cpu(), dump_path + '.pt')
+                elif isinstance(val, np.ndarray):
+                    np.save(dump_path + '.npy', val)
+                raise RuntimeError(f"Numeric issue detected in '{name}' (NaN/Inf). Saved dump to {dump_path}.*")
 
         preds = pipe.infer(
             video=obs.permute(0,2,1,3,4).to(device), # -> v, t, c, h, w

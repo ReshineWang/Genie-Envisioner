@@ -176,7 +176,7 @@ class CustomLeRobotDataset(Dataset):
                         continue
 
                     video_path = os.path.join(video_folder, f"chunk-{episode_chunk:03d}", "{}", f"episode_{episode_index:06d}.mp4")
-                    
+
                     info = [
                         video_path,
                         None, # no need for camera_info
@@ -190,6 +190,9 @@ class CustomLeRobotDataset(Dataset):
 
         if dataset_info_cache_path is not None and not(os.path.exists(dataset_info_cache_path)):
             zero_rank_print(f"Save Cache Dataset Information to {dataset_info_cache_path}")
+
+            os.makedirs(os.path.dirname(dataset_info_cache_path), exist_ok=True)
+
             with open(dataset_info_cache_path, "w") as f:
                 json.dump(self.dataset, f)
 
@@ -221,7 +224,7 @@ class CustomLeRobotDataset(Dataset):
         ])
         self.preprocess = preprocess
 
-        if n_previous > 1:
+        if n_previous >= 1:   ## Debug 这里我觉得应该设大于等于1
             self.n_previous = n_previous
             self.previous_pick_mode = previous_pick_mode
         else:
@@ -264,6 +267,10 @@ class CustomLeRobotDataset(Dataset):
         if self.fix_sidx is not None and self.fix_mem_idx is not None:
             action_indexes = list(range(self.fix_sidx, self.fix_sidx+self.action_chunk))
             frame_indexes = action_indexes[::self.video_temporal_stride]
+
+            ##确保索引不超过 total_frames - 1
+            action_indexes = np.clip(action_indexes, 0, total_frames - 1).tolist()
+            mem_indexes = np.clip(self.fix_mem_idx, 0, total_frames - 1).tolist()
             return self.fix_mem_idx + frame_indexes, self.fix_mem_idx + action_indexes
 
         chunk_end = random.randint(self.action_chunk, total_frames+self.action_chunk)
@@ -401,6 +408,10 @@ class CustomLeRobotDataset(Dataset):
         
         sample_size, specific_transforms_resize, specific_transforms_norm = self.get_transform()
         vid_indexes, indexes = self.get_frame_indexes(total_frames, )
+
+        # max_needed_index = max(max(vid_indexes), max(indexes))
+        # if max_needed_index >= total_frames:
+        #     raise StopIteration
         
         data = pd.read_parquet(parquet_path)
 

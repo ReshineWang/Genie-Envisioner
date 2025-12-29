@@ -220,7 +220,7 @@ def args_parser():
     parser.add_argument('--prompt_txt_file', type=str, default=None)
     parser.add_argument('--output_path', type=str, required=True, help='Path to save outputs, used in inference stage only')
     parser.add_argument('--state_path', type=str, default=None, help='Path to load state')
-    parser.add_argument('--n_chunk', type=int, default=1, help='num of chunks to predict, used in inference stage only')
+    parser.add_argument('--n_chunk', type=int, default=10, help='num of chunks to predict, used in inference stage only')
     args = parser.parse_args()
     return args
 

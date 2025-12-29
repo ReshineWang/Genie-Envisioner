@@ -161,6 +161,13 @@ class Trainer:
         )
         mixed_precision = "no" if torch.backends.mps.is_available() else self.args.mixed_precision
         report_to = None if self.args.report_to.lower() == "none" else self.args.report_to
+        if report_to == "wandb":
+            import wandb
+            wandb.init(
+                project="GE_finetune",
+                name=self.args.tracker_name,
+                config=self.args.__dict__
+            )
 
         if getattr(self.args, "use_deepspeed", False):
             per_device_bs = self.args.batch_size

@@ -173,3 +173,7 @@ valid/*
 # custom_configs/
 logs/
 output/
+ckpt/
+GE_ACT_ROBOTWIN_FINETUNE/*
+GE_BASE_ROBOTWIN_FINETUNE/*
+wandb/

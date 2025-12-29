@@ -596,6 +596,7 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
         history_action_state: torch.Tensor = None,
         pixel_wise_timestep: bool = True,
         n_chunk: int = 1,
+        Asyn_infer: bool = False,
         **kwargs,
     ):
         r"""
@@ -669,7 +670,10 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                 `._callback_tensor_inputs` attribute of your pipeline class.
             max_sequence_length (`int` defaults to `128 `):
                 Maximum sequence length to use with the `prompt`.
-
+            Asyn_infer (`bool`, *optional*, defaults to `False`):
+                Whether to use asynchronous inference to predict the action by the first denoising step.
+                if True, The video DiT performs a single flow-matching denoising step per inference pass to  
+                generate visual latent tokens, which are then cached and reused throughout the action generation phase.
         Examples:
 
         Returns:
@@ -836,7 +840,7 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
 
                     # TODO: only compute video in the first most noisy timestep
                     compute_video = i == 0 or return_video
-                    store_buffer = i == 0 and not return_video
+                    store_buffer = (i == 0) and (Asyn_infer or not return_video)
 
                     if return_action:
                         action_timesteps = t.clone()
@@ -872,33 +876,89 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                         # shape: bv, t
                         timestep = timestep.unsqueeze(-1) * (1 - cond_indicator)
                         
-                    
-                    noise_pred = self.transformer(
-                        hidden_states=latent_model_input,
-                        encoder_hidden_states=prompt_embeds,
-                        timestep=timestep,
-                        encoder_attention_mask=prompt_attention_mask,
-                        num_frames=latent_num_frames,
-                        height=latent_height,
-                        width=latent_width,
-                        rope_interpolation_scale=rope_interpolation_scale,
-                        attention_kwargs=attention_kwargs,
-                        return_dict=False,
-                        action_states=actions_in,
-                        action_timestep=action_timesteps,
-                        return_video=compute_video,
-                        return_action=return_action,
-                        n_view=n_view,
-                        video_states_buffer=video_states_buffer,
-                        store_buffer=store_buffer,
-                        video_attention_mask=video_attention_mask,
-                        history_action_state=history_action_state_in,
-                        condition_mask=conditioning_mask,
-                    )[0]
+                    # Check if we need split inference (Video recompute + Action cached)
+                    split_inference = Asyn_infer and (i > 0) and return_video and return_action
 
+                    if split_inference:
+                        # 1. Video Pass (Compute video noise, ignore action)
+                        noise_pred_video = self.transformer(
+                            hidden_states=latent_model_input,
+                            encoder_hidden_states=prompt_embeds,
+                            timestep=timestep,
+                            encoder_attention_mask=prompt_attention_mask,
+                            num_frames=latent_num_frames,
+                            height=latent_height,
+                            width=latent_width,
+                            rope_interpolation_scale=rope_interpolation_scale,
+                            attention_kwargs=attention_kwargs,
+                            return_dict=False,
+                            action_states=None,
+                            action_timestep=None,
+                            return_video=True,
+                            return_action=False,
+                            n_view=n_view,
+                            video_states_buffer=None,
+                            store_buffer=False,
+                            video_attention_mask=video_attention_mask,
+                            history_action_state=None,
+                            condition_mask=conditioning_mask,
+                        )[0]
 
-                    if store_buffer:
-                        video_states_buffer = noise_pred["video_states_buffer"]
+                        # 2. Action Pass (Use cached buffer, ignore video output)
+                        noise_pred_action = self.transformer(
+                            hidden_states=latent_model_input, # Ignored for feature extraction
+                            encoder_hidden_states=prompt_embeds,
+                            timestep=timestep,
+                            encoder_attention_mask=prompt_attention_mask,
+                            num_frames=latent_num_frames,
+                            height=latent_height,
+                            width=latent_width,
+                            rope_interpolation_scale=rope_interpolation_scale,
+                            attention_kwargs=attention_kwargs,
+                            return_dict=False,
+                            action_states=actions_in,
+                            action_timestep=action_timesteps,
+                            return_video=False,
+                            return_action=True,
+                            n_view=n_view,
+                            video_states_buffer=video_states_buffer,
+                            store_buffer=False,
+                            video_attention_mask=video_attention_mask,
+                            history_action_state=history_action_state_in,
+                            condition_mask=conditioning_mask,
+                        )[0]
+
+                        noise_pred = {"video": noise_pred_video["video"], "action": noise_pred_action["action"]}
+
+                    else:
+                        pass_buffer = video_states_buffer if (not compute_video) else None
+                        
+                        noise_pred = self.transformer(
+                            hidden_states=latent_model_input,
+                            encoder_hidden_states=prompt_embeds,
+                            timestep=timestep,
+                            encoder_attention_mask=prompt_attention_mask,
+                            num_frames=latent_num_frames,
+                            height=latent_height,
+                            width=latent_width,
+                            rope_interpolation_scale=rope_interpolation_scale,
+                            attention_kwargs=attention_kwargs,
+                            return_dict=False,
+                            action_states=actions_in,
+                            action_timestep=action_timesteps,
+                            return_video=compute_video,
+                            return_action=return_action,
+                            n_view=n_view,
+                            video_states_buffer=pass_buffer,
+                            store_buffer=store_buffer,
+                            video_attention_mask=video_attention_mask,
+                            history_action_state=history_action_state_in,
+                            condition_mask=conditioning_mask,
+                        )[0]
+
+                        if store_buffer:
+                            video_states_buffer = noise_pred["video_states_buffer"]
+
 
                     if return_action:
                         if self.do_classifier_free_guidance:
