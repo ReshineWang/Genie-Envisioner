@@ -16,6 +16,8 @@ This repo is the official implementation of Genie Envisioner: A Unified World Fo
 
 ## News
 
+- [2025.12.18] 📚️ The [instruction](https://github.com/AgibotTech/Genie-Envisioner/blob/master/experiments/RUN_LIBERO.md) for evaluating GE-Act on LIBERO is released.
+
 - [2025.10.22] 🚀 Pretrained Weights of [GE-Sim(Cosmos2-based version)](https://modelscope.cn/models/agibot_world/Genie-Envisioner/file/view/master/ge_sim_cosmos_v0.1.safetensors) have been released. The released GE-Sim model is pretrained on [AgiBotWorld](https://huggingface.co/datasets/agibot-world/AgiBotWorld-Beta).
  
 - [2025.10.22] 🚀 Example results and codes of GE-Sim (the latest version based on [Cosmos2](https://huggingface.co/nvidia/Cosmos-Predict2-2B-Video2World)) have been released. Detailed usage can be found in [GE-Sim](#ge-sim-inference) and the example results can be found in [Example results of GE-sim](#example-results-of-ge-sim).
@@ -37,8 +39,6 @@ This repo is the official implementation of Genie Envisioner: A Unified World Fo
 - [x] Support more backbone models
 
 
-
-
 ## Getting started
 
 ### Setup
@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 #### GE-Act Post-Training
 
-1. Download the pretrained weights of [GE-base](https://huggingface.co/agibot-world/Genie-Envisioner/tree/main) and the weights of tokenizer and vae used in LTX_Video from [HuggingFace](https://huggingface.co/Lightricks/LTX-Video/tree/main), and modify the model weight config in `configs/ltx_model/video_model.yaml`:
+1. Download the pretrained weights of [GE-Base-fast](https://huggingface.co/agibot-world/Genie-Envisioner/tree/main) and the weights of tokenizer and vae used in LTX_Video from [HuggingFace](https://huggingface.co/Lightricks/LTX-Video/tree/main), and modify the model weight config in `configs/ltx_model/video_model.yaml`:
     ```
     pretrained_model_name_or_path: PATH/TO/PRETRAINED_WEIGHTS_OF_VAE_AND_TOKENIZER
     diffusion_model:
@@ -216,6 +216,11 @@ pip install -r requirements.txt
     ```
     bash scripts/train.sh main.py configs/ltx_model/policy_model_lerobot.yaml
     ```
+
+#### GE-Act on Simulation Benchmark
+
+The [instruction](https://github.com/AgibotTech/Genie-Envisioner/blob/master/experiments/RUN_LIBERO.md) for evaluating GE-Act on LIBERO is released.
+
 
 
 #### GE-base Pre-Training
