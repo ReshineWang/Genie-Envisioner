@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=0,1
 script_path=${1}
 echo $script_path
 
@@ -19,7 +19,7 @@ fi
 if [ -z "$WORLD_SIZE" ]; then
     echo "Training on 1 Node, $NGPU GPUs (CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-all})"
     torchrun --nnodes=1 \
-        --master_port=29900 \
+        --master_port=29906 \
         --nproc_per_node=$NGPU \
         --node_rank=0 \
         $script_path \

@@ -51,6 +51,7 @@ from utils.memory_utils import get_memory_statistics, free_memory
 # ----------------------------------------------------
 from torch.utils.tensorboard import SummaryWriter
 from utils import init_logging, import_custom_class, save_video
+from peft import LoraConfig, get_peft_model
 
 # ----------------------------------------------------
 from utils.data_utils import get_latents, get_text_conditions, gen_noise_from_condition_frame_latent, randn_tensor, apply_color_jitter_to_video
@@ -377,6 +378,26 @@ class Trainer:
         if self.args.gradient_checkpointing:
             self.diffusion_model.enable_gradient_checkpointing()
 
+        if getattr(self.args, "use_lora", False):
+            logger.info("Using LoRA for training")
+            self.diffusion_model.requires_grad_(False)
+            
+            lora_config = LoraConfig(
+                r=getattr(self.args, "lora_rank", 16),
+                lora_alpha=getattr(self.args, "lora_alpha", 32),
+                target_modules=getattr(self.args, "lora_target_modules", ["to_q", "to_k", "to_v", "to_out.0"]),
+                lora_dropout=getattr(self.args, "lora_dropout", 0.05),
+                bias="none",
+            )
+            self.diffusion_model = get_peft_model(self.diffusion_model, lora_config)
+            self.diffusion_model.print_trainable_parameters()
+
+            # if self.args.gradient_checkpointing:
+            #     if hasattr(self.diffusion_model, "enable_input_require_grads"):
+            #         self.diffusion_model.enable_input_require_grads()
+            #     elif hasattr(self.diffusion_model, "get_base_model") and hasattr(self.diffusion_model.get_base_model(), "enable_input_require_grads"):
+            #         self.diffusion_model.get_base_model().enable_input_require_grads()
+
         # Enable TF32 for faster training on Ampere GPUs: https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
         if self.args.allow_tf32 and torch.cuda.is_available():
             torch.backends.cuda.matmul.allow_tf32 = True
@@ -404,7 +425,11 @@ class Trainer:
             )
 
         diffusion_model_trainable_params = []
-        if train_mode == 'action_only':
+        if getattr(self.args, "use_lora", False):
+            for name, param in self.diffusion_model.named_parameters():
+                if param.requires_grad:
+                    diffusion_model_trainable_params.append(param)
+        elif train_mode == 'action_only':
             for name, param in self.diffusion_model.named_parameters():
                 if 'action_' in name:
                     param.requires_grad = True
@@ -648,6 +673,8 @@ class Trainer:
                         ss = torch.full_like(ss, 1.0)
 
                     noisy_latents = (1.0 - ss) * latents + ss * noise
+                    if self.args.gradient_checkpointing:
+                        noisy_latents.requires_grad_(True)
 
                     # These weighting schemes use a uniform timestep sampling and instead post-weight the loss, shape bv,1,c
                     weights = compute_loss_weighting_for_sd3(

@@ -70,6 +70,7 @@ class CustomLeRobotDataset(Dataset):
         fix_sidx = None,
         fix_mem_idx = None,
         stat_file = None,
+        dataset_repeat = 1,
     
     ):
         """
@@ -107,6 +108,7 @@ class CustomLeRobotDataset(Dataset):
         fix_sidx:                used in validation stage only, set start index to fix_sidx
         fix_mem_idx:             used in validation stage only, set memory indexes to fix_mem_idx
         stat_file:               used to specific statistics
+        dataset_repeat:          repeat the dataset for n times
         """
         
         zero_rank_print(f"loading annotations...")
@@ -199,7 +201,8 @@ class CustomLeRobotDataset(Dataset):
             with open(dataset_info_cache_path, "w") as f:
                 json.dump(self.dataset, f)
 
-        self.length = len(self.dataset)
+        self.dataset_repeat = dataset_repeat
+        self.length = len(self.dataset) * self.dataset_repeat
         zero_rank_print(f"data scale: {self.length}")
 
         self.chunk = chunk
@@ -496,6 +499,7 @@ class CustomLeRobotDataset(Dataset):
 
     def __getitem__(self, idx):        
         
+        idx = idx % len(self.dataset)
         # video, actions, caption, state = self.get_batch(idx)
 
         if self.fix_epiidx is not None:

@@ -95,7 +95,7 @@ flow_mode_scale: 1.29
 pixel_wise_timestep: True
 
 diffusion_model:
-  model_path: "/data/dex/Genie-Envisioner/GE_BASE_ROBOTWIN_FINETUNE/2025_12_31_13_53_56/step_2000/diffusion_pytorch_model.safetensors"
+  model_path: "/data/dex/Genie-Envisioner/ckpt/ge_base_slow_v0.1.safetensors"
   config:
     activation_fn: gelu-approximate
     attention_bias: true
@@ -121,9 +121,9 @@ data:
 ### more details can be found in data/utils/*_dataset.py
   train:
     data_roots: ["/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot"]
-    domains: ["Rearr", ]
+    domains: ["Basket", ]
     sample_size: [480, 640]
-    sample_n_frames: 250
+    sample_n_frames: 500
     preprocess :  'resize'
     valid_cam :  ['observation.images.cam_high','observation.images.cam_left_wrist', 'observation.images.cam_right_wrist']
     chunk: 50
@@ -131,16 +131,16 @@ data:
     n_previous: 1
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Rearr/dataset_meta_info_cache/train"
+    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Basket/dataset_meta_info_cache/train"
     action_type: "delta"
     action_space: "joint"
-    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Rearr/sta/sta.json"
+    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Basket/sta/sta.json"
     dataset_repeat: 100
   val:
     data_roots: ["/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot"]
-    domains: ["Rearr", ]
+    domains: ["Basket", ]
     sample_size: [480, 640]
-    sample_n_frames: 250
+    sample_n_frames: 500
     preprocess :  'resize'
     valid_cam :  ['observation.images.cam_high','observation.images.cam_left_wrist', 'observation.images.cam_right_wrist']
     chunk: 50
@@ -148,10 +148,10 @@ data:
     n_previous: 1
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Rearr/dataset_meta_info_cache/val"
+    dataset_info_cache_path: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Basket/dataset_meta_info_cache/val"
     action_type: "delta"
     action_space: "joint"
-    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Rearr/sta/sta.json"
+    stat_file: "/data/dex/RoboTwin/data/runyi_data/huggingface/lerobot/Basket/sta/sta.json"
 
 
 use_color_jitter: true
