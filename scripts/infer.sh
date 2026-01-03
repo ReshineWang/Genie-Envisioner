@@ -22,6 +22,7 @@ torchrun --nnodes=1 \
     --checkpoint_path $ckp_path \
     --output_path $output_path \
     --n_validation 1 \
-    --n_chunk_action 2 \
+    --n_chunk_action 1 \
+    --n_chunk_video 5 \
     --domain_name $domain_name
 

@@ -95,7 +95,7 @@ flow_mode_scale: 1.29
 pixel_wise_timestep: True
 
 diffusion_model:
-  model_path: "/data/dex/Genie-Envisioner/GE_BASE_ROBOTWIN_FINETUNE/2025_12_18_03_49_40/step_9000/diffusion_pytorch_model.safetensors"
+  model_path: "/data/dex/Genie-Envisioner/GE_BASE_ROBOTWIN_FINETUNE/2026_01_02_16_41_20/step_33000/diffusion_pytorch_model.safetensors"
   config:
     activation_fn: gelu-approximate
     attention_bias: true

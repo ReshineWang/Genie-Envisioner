@@ -168,6 +168,7 @@ log/*
 valid/*
 *.jsonl
 *.gif
+*.mp4
 # *.png
 *.pyc
 # custom_configs/
@@ -177,3 +178,4 @@ ckpt/
 GE_ACT_ROBOTWIN_FINETUNE/*
 GE_BASE_ROBOTWIN_FINETUNE/*
 wandb/
+output_RoboTwin/*

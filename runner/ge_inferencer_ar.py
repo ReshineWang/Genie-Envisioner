@@ -206,7 +206,7 @@ class Inferencer:
 
 
         if self.args.return_action:
-            n_chunk_video = 1
+            n_chunk_video = 1     # 当动作和视频同时推理时，一个动作chunk对应一个视频chunk
             action_type = self.args.data["train"]["action_type"]
             action_space = self.args.data["train"]["action_space"]
             
@@ -218,11 +218,10 @@ class Inferencer:
         for i_validation in range(n_validation):
             
             self.val_dataloader.dataset.fix_epiidx = i_validation
+            self.val_dataloader.dataset.fix_sidx = 1   ###  这里手动规定了开始推理的时间步
+            self.val_dataloader.dataset.fix_mem_idx = [1 for _ in range(self.args.data['train']['n_previous'])]
 
             if self.args.return_action:
-                self.val_dataloader.dataset.fix_sidx = 1   ###  这里手动规定了开始推理的时间步
-                self.val_dataloader.dataset.fix_mem_idx = [1 for _ in range(self.args.data['train']['n_previous'])]
-
                 pd_actions_arr_all = None
                 gt_actions_arr_all = None
 
@@ -249,6 +248,7 @@ class Inferencer:
 
                 # image = batch['video'][:,:,:,:self.args.data['train']['n_previous']]  # shape b,c,v,t,h,w 
                 prompt = batch['caption']
+                print(f"Processing validation {i_validation}, chunk action {i_chunk_action}, prompt: {prompt}")
                 gt_video = batch['video']
 
                 b, c, v, t, h, w = batch['video'].shape
@@ -282,8 +282,8 @@ class Inferencer:
 
                 preds = pipe.infer(
                     image=image,
-                    # prompt=prompt[:batch_size],
-                    prompt="use the robot arm to grasp the fork and put on the plate.",
+                    prompt=prompt[:batch_size],
+                    # prompt="use the robot arm to grasp the fork and put on the plate.",
                     negative_prompt=negative_prompt,
                     num_inference_steps=self.args.num_inference_step,
                     decode_timestep=0.03,

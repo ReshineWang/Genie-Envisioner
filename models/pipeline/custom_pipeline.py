@@ -1032,7 +1032,11 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                     self.scheduler._step_index = None
 
                     ### prepare memories for next chunk
-                    new_mem_idxs = torch.linspace(0, video_list.shape[2]-1, n_prev).round().long()
+                    if n_prev == 1:
+                        new_mem_idxs = torch.tensor([video_list.shape[2]-1])
+                    else:
+                        new_mem_idxs = torch.linspace(0, video_list.shape[2]-1, n_prev).round().long()
+
                     new_mems = video_list[:, :, new_mem_idxs, :, :].clone()
                     new_mems = rearrange(new_mems, "bv c t h w -> (bv t) c h w").unsqueeze(2)
                     init_latents = retrieve_latents(self.vae.encode(new_mems), generator, sample_mode=sample_mode)
